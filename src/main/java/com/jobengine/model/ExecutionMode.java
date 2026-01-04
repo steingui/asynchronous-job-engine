@@ -6,7 +6,7 @@ package com.jobengine.model;
  * <p>Each mode has different characteristics regarding concurrency,
  * resource usage, and performance trade-offs:</p>
  *
- * <h3>SEQUENTIAL</h3>
+ * <h2>SEQUENTIAL</h2>
  * <ul>
  *   <li><b>How it works:</b> Jobs execute one at a time in the calling thread</li>
  *   <li><b>JVM Impact:</b> Minimal heap usage, single stack frame per job</li>
@@ -14,7 +14,7 @@ package com.jobengine.model;
  *   <li><b>Trade-offs:</b> No parallelism, blocks the caller thread</li>
  * </ul>
  *
- * <h3>THREAD_POOL</h3>
+ * <h2>THREAD_POOL</h2>
  * <ul>
  *   <li><b>How it works:</b> Jobs are submitted to a ThreadPoolExecutor</li>
  *   <li><b>JVM Impact:</b> Each thread has its own stack (~1MB default), context switching overhead</li>
@@ -22,7 +22,7 @@ package com.jobengine.model;
  *   <li><b>Trade-offs:</b> Limited by pool size, resource-intensive for I/O-heavy workloads</li>
  * </ul>
  *
- * <h3>ASYNC</h3>
+ * <h2>ASYNC</h2>
  * <ul>
  *   <li><b>How it works:</b> Uses CompletableFuture with Virtual Threads (Java 21+)</li>
  *   <li><b>JVM Impact:</b> Virtual threads are heap-allocated (~few KB), GC manages lifecycle</li>

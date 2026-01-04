@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <h2>Trade-offs</h2>
  * <table border="1">
+ *   <caption>Sequential Executor Pros and Cons</caption>
  *   <tr><th>Pros</th><th>Cons</th></tr>
  *   <tr>
  *     <td>Simple, predictable behavior</td>
@@ -80,6 +81,12 @@ public class SequentialJobExecutor implements JobExecutor {
     private final MetricsService metricsService;
     private final AtomicInteger activeCount = new AtomicInteger(0);
 
+    /**
+     * Constructs a SequentialJobExecutor with the required dependencies.
+     *
+     * @param ioSimulator    simulator for I/O operations
+     * @param metricsService service for recording metrics
+     */
     public SequentialJobExecutor(IOSimulator ioSimulator, MetricsService metricsService) {
         this.ioSimulator = ioSimulator;
         this.metricsService = metricsService;

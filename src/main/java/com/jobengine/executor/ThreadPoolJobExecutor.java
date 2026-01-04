@@ -63,6 +63,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  *
  * <h2>Trade-offs</h2>
  * <table border="1">
+ *   <caption>Thread Pool Executor Pros and Cons</caption>
  *   <tr><th>Pros</th><th>Cons</th></tr>
  *   <tr>
  *     <td>True parallelism on multi-core CPUs</td>
@@ -102,6 +103,13 @@ public class ThreadPoolJobExecutor implements JobExecutor {
     private final IOSimulator ioSimulator;
     private final MetricsService metricsService;
 
+    /**
+     * Constructs a ThreadPoolJobExecutor with the required dependencies.
+     *
+     * @param threadPoolExecutor the thread pool to use for execution
+     * @param ioSimulator        simulator for I/O operations
+     * @param metricsService     service for recording metrics
+     */
     public ThreadPoolJobExecutor(ThreadPoolExecutor threadPoolExecutor,
                                   IOSimulator ioSimulator,
                                   MetricsService metricsService) {

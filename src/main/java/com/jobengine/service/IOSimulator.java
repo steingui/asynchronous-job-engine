@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * HTTP calls, or file operations. It introduces artificial delays to test how different
  * execution modes handle blocking operations.</p>
  *
- * <h3>Why This Matters</h3>
+ * <h2>Why This Matters</h2>
  * <p>The behavior of different execution modes varies significantly based on workload type:</p>
  * <ul>
  *   <li><b>CPU-bound:</b> Work that keeps the CPU busy (calculations, parsing)</li>
@@ -38,6 +38,11 @@ public class IOSimulator {
     private final int minLatencyMs;
     private final int maxLatencyMs;
 
+    /**
+     * Constructs an IOSimulator with the configured latency settings.
+     *
+     * @param properties the job engine configuration properties
+     */
     public IOSimulator(JobEngineProperties properties) {
         this.minLatencyMs = properties.getIoSimulation().minLatencyMs();
         this.maxLatencyMs = properties.getIoSimulation().maxLatencyMs();

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>This service integrates with Micrometer to expose metrics that can be
  * scraped by Prometheus and visualized in Grafana.</p>
  *
- * <h3>Metrics Collected</h3>
+ * <h2>Metrics Collected</h2>
  * <ul>
  *   <li><b>job.execution.time:</b> Histogram of execution times by mode</li>
  *   <li><b>job.completed.total:</b> Counter of completed jobs by mode</li>
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>job.thread_pool.queue_size:</b> Gauge of queued tasks</li>
  * </ul>
  *
- * <h3>Accessing Metrics</h3>
+ * <h2>Accessing Metrics</h2>
  * <ul>
  *   <li>Prometheus: GET /actuator/prometheus</li>
  *   <li>JSON: GET /actuator/metrics/job.execution.time</li>
@@ -49,6 +49,12 @@ public class MetricsService {
     private final Map<ExecutionMode, Counter> failedCounters;
     private final Map<ExecutionMode, AtomicInteger> activeGauges;
 
+    /**
+     * Constructs a MetricsService with the required dependencies.
+     *
+     * @param meterRegistry        the Micrometer registry for metrics
+     * @param threadPoolExecutor   the thread pool to monitor
+     */
     public MetricsService(MeterRegistry meterRegistry, ThreadPoolExecutor threadPoolExecutor) {
         this.meterRegistry = meterRegistry;
         this.executionTimers = new EnumMap<>(ExecutionMode.class);
@@ -157,6 +163,13 @@ public class MetricsService {
 
     /**
      * Statistics for a single execution mode.
+     *
+     * @param completedCount     total completed jobs
+     * @param failedCount        total failed jobs
+     * @param activeCount        currently active jobs
+     * @param avgExecutionTimeMs average execution time in milliseconds
+     * @param maxExecutionTimeMs maximum execution time in milliseconds
+     * @param totalExecutions    total number of executions
      */
     public record ModeStats(
             long completedCount,

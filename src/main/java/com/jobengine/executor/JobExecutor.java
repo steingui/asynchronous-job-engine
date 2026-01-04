@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  * Each implementation provides a different execution strategy with distinct
  * performance characteristics and trade-offs.</p>
  *
- * <h3>Implementation Guidelines</h3>
+ * <h2>Implementation Guidelines</h2>
  * <ul>
  *   <li>All implementations must be thread-safe</li>
  *   <li>Implementations should handle exceptions gracefully</li>

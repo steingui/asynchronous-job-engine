@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <h3>Virtual Threads vs Platform Threads</h3>
  * <table border="1">
+ *   <caption>Comparison of Platform vs Virtual Threads</caption>
  *   <tr><th>Aspect</th><th>Platform Thread</th><th>Virtual Thread</th></tr>
  *   <tr><td>Creation cost</td><td>~1ms, ~1MB stack</td><td>~1μs, ~few KB</td></tr>
  *   <tr><td>Max count</td><td>Thousands</td><td>Millions</td></tr>
@@ -71,6 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <h2>Trade-offs</h2>
  * <table border="1">
+ *   <caption>Async Executor Pros and Cons</caption>
  *   <tr><th>Pros</th><th>Cons</th></tr>
  *   <tr>
  *     <td>Massive concurrency (millions of threads)</td>
@@ -113,6 +115,13 @@ public class AsyncJobExecutor implements JobExecutor {
     private final MetricsService metricsService;
     private final AtomicInteger activeCount = new AtomicInteger(0);
 
+    /**
+     * Constructs an AsyncJobExecutor with the required dependencies.
+     *
+     * @param virtualThreadExecutor executor service using virtual threads
+     * @param ioSimulator           simulator for I/O operations
+     * @param metricsService        service for recording metrics
+     */
     public AsyncJobExecutor(@Qualifier("virtualThreadExecutor") ExecutorService virtualThreadExecutor,
                             IOSimulator ioSimulator,
                             MetricsService metricsService) {

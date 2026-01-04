@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  *   <li><b>Virtual Thread Executor:</b> An unbounded executor using virtual threads for ASYNC mode</li>
  * </ul>
  *
- * <h3>JVM Considerations</h3>
+ * <h2>JVM Considerations</h2>
  * <p><b>Platform Threads (ThreadPoolExecutor):</b></p>
  * <ul>
  *   <li>Each thread allocates ~1MB of stack space by default</li>
@@ -49,6 +49,11 @@ public class ExecutorConfig {
 
     private final JobEngineProperties properties;
 
+    /**
+     * Constructs an ExecutorConfig with the required properties.
+     *
+     * @param properties the job engine configuration properties
+     */
     public ExecutorConfig(JobEngineProperties properties) {
         this.properties = properties;
     }
