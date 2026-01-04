@@ -93,10 +93,12 @@
         }
       ],
       "title": "SLO: p99 < 1s",
+      "description": "99% dos jobs terminam em menos de X segundos. Verde (<1s) = rápido. Vermelho (>5s) = lento.",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus" },
+      "description": "Taxa de erro atual. Verde (<1%) = saudável. Vermelho (>5%) = incidente.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -680,6 +682,7 @@
         }
       ],
       "title": "Retry Behavior",
+      "description": "Retentativas automáticas. Verde = sucesso sem retry. Vermelho = falhou mesmo após 3 tentativas.",
       "type": "timeseries"
     },
     {
@@ -819,6 +822,7 @@
         }
       ],
       "title": "Heap Memory (MB)",
+      "description": "RAM usada pela JVM. Used sobe, GC limpa. Se Used → Max, app trava (OutOfMemory).",
       "type": "timeseries"
     },
     {
@@ -876,6 +880,7 @@
         }
       ],
       "title": "JVM Threads",
+      "description": "Total de threads na JVM. Virtual Threads não aparecem aqui (são milhares, mas leves).",
       "type": "timeseries"
     },
     {
@@ -944,6 +949,7 @@
         }
       ],
       "title": "Thread Pool",
+      "description": "Pool de threads reais do sistema. Active = trabalhando, Queue = aguardando. Fila cheia = rejeições.",
       "type": "timeseries"
     }
   ],
