@@ -56,6 +56,20 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    distribution:
+      # Habilita histogramas para calcular percentis no Prometheus
+      percentiles-histogram:
+        job.execution.time: true
+        http.server.requests: true
+      # Expõe percentis pré-calculados (client-side)
+      percentiles:
+        job.execution.time: 0.5, 0.95, 0.99
+        http.server.requests: 0.5, 0.95, 0.99
+      # SLO buckets para latência
+      slo:
+        job.execution.time: 100ms, 300ms, 500ms, 1s, 5s
+        http.server.requests: 50ms, 100ms, 500ms, 1s
 
 # Logging configuration
 logging:
