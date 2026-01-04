@@ -31,6 +31,10 @@ dependencies {
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     
+    // Resilience (retry, circuit breaker, timeout)
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

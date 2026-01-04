@@ -1,13 +1,13 @@
 package com.jobengine.service;
 
 import com.jobengine.config.JobEngineProperties;
+import com.jobengine.exception.IOSimulationException;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
-
-import com.jobengine.exception.IOSimulationException;
 
 /**
  * Simulates I/O-bound operations with configurable latency.
@@ -75,8 +75,9 @@ public class IOSimulator {
      *
      * @param payload the job payload to "process"
      * @return a processed result string
-     * @throws IOSimulationException if random failure occurs or interrupted
+     * @throws IOSimulationException if random failure occurs or interrupted after all retries
      */
+    @Retry(name = "ioSimulator", fallbackMethod = "simulateWorkFallback")
     public String simulateWork(String payload) {
         var random = ThreadLocalRandom.current();
         
@@ -118,6 +119,19 @@ public class IOSimulator {
             return minLatencyMs;
         }
         return ThreadLocalRandom.current().nextInt(minLatencyMs, maxLatencyMs + 1);
+    }
+
+    /**
+     * Fallback method called when all retry attempts are exhausted.
+     *
+     * @param payload the original payload
+     * @param ex the exception that caused the failure
+     * @return never returns, always throws
+     * @throws IOSimulationException wrapping the original exception
+     */
+    private String simulateWorkFallback(String payload, Exception ex) {
+        log.error("All retry attempts exhausted for payload={}, error={}", payload, ex.getMessage());
+        throw new IOSimulationException("I/O operation failed after 3 retries: " + ex.getMessage(), ex);
     }
 
     /**

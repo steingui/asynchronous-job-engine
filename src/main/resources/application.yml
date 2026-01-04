@@ -28,6 +28,25 @@ job-engine:
     timeout-rate: 0.05        # 5% chance de latência extrema
     timeout-latency-ms: 5000  # 5 segundos quando timeout
 
+# Resilience4j Configuration
+resilience4j:
+  retry:
+    instances:
+      ioSimulator:
+        max-attempts: 3                    # Tenta até 3 vezes
+        wait-duration: 500ms               # Espera 500ms entre tentativas
+        exponential-backoff-multiplier: 2  # 500ms → 1s → 2s
+        retry-exceptions:
+          - com.jobengine.exception.IOSimulationException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+  
+  timelimiter:
+    instances:
+      ioSimulator:
+        timeout-duration: 3s               # Cancela após 3 segundos
+        cancel-running-future: true
+
 # Actuator endpoints for metrics
 management:
   endpoints:
@@ -43,6 +62,7 @@ logging:
   level:
     root: INFO
     com.jobengine: DEBUG
+    io.github.resilience4j: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 

@@ -302,6 +302,76 @@ Sistemas reais falham. Testar com chaos revela:
 
 ---
 
+## Resiliência (Resilience4j)
+
+O sistema implementa padrões de resiliência para reduzir falhas.
+
+### Retry com Backoff Exponencial
+
+```
+Falha detectada
+      │
+      ▼
+┌──────────────┐
+│  Tentativa 1 │ ← falhou
+└──────┬───────┘
+       │ espera 500ms
+       ▼
+┌──────────────┐
+│  Tentativa 2 │ ← falhou
+└──────┬───────┘
+       │ espera 1s (500ms × 2)
+       ▼
+┌──────────────┐
+│  Tentativa 3 │ ← falhou
+└──────┬───────┘
+       │
+       ▼
+   FALLBACK → Job marcado FAILED
+```
+
+### Configuração
+
+```yaml
+resilience4j:
+  retry:
+    instances:
+      ioSimulator:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.jobengine.exception.IOSimulationException
+```
+
+### Impacto
+
+| Métrica | Sem Retry | Com Retry |
+|---------|-----------|-----------|
+| `failedCount` | ~10% | ~1% |
+| Tempo médio | +0% | +~15% |
+
+**Por quê ~1%?** Probabilidade de falhar 3× seguidas: 10% × 10% × 10% = 0.1%
+
+### Trade-off
+
+- ✅ Menos falhas visíveis ao cliente
+- ✅ Resiliente a falhas transitórias
+- ⚠️ Tempo de execução maior (retries + waits)
+- ⚠️ Pode sobrecarregar serviço já com problemas
+
+### Quando desabilitar
+
+```yaml
+max-attempts: 1  # Desabilita retry
+```
+
+Útil para:
+- Jobs idempotentes que não podem repetir
+- Quando a falha é definitiva (não transitória)
+
+---
+
 ## Referências
 
 - [JEP 444: Virtual Threads](https://openjdk.org/jeps/444)
