@@ -1,0 +1,23 @@
+---
+
+Context:
+This is a backend project for a financial system with high reliability requirements.
+
+Tech stack:
+- Java (latest compatible)
+- Spring Boot (latest compatible)
+- Gradle (latest compatible)
+
+Coding standards:
+- Avoid static state
+- Prefer constructor injection
+- Do not use field injection
+
+Observability:
+- Always add structured logging
+- Use metrics where relevant
+
+Security:
+- Never log sensitive data
+- Validate all external inputs
+

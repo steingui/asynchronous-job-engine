@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: asynchronous-job-engine
+
+server:
+  port: 8080
+
+# Job Engine Configuration
+job-engine:
+  # Thread pool settings for ThreadPoolExecutor mode
+  thread-pool:
+    core-size: 4
+    max-size: 16
+    queue-capacity: 100
+    keep-alive-seconds: 60
+  
+  # Async execution settings
+  async:
+    timeout-seconds: 300
+    use-virtual-threads: true
+  
+  # I/O simulation settings
+  io-simulation:
+    min-latency-ms: 50
+    max-latency-ms: 500
+
+# Actuator endpoints for metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.jobengine: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
