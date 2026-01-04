@@ -228,5 +228,20 @@ public class JobController {
         jobService.clearAll();
         return ResponseEntity.ok(Map.of("message", "All jobs cleared"));
     }
+
+    /**
+     * Resets all job metrics and clears stored jobs.
+     *
+     * <p>Useful for starting fresh stress tests without restarting the server.
+     * This clears both Micrometer metrics (counters, timers) and job storage.</p>
+     *
+     * @return confirmation message
+     */
+    @DeleteMapping("/metrics")
+    public ResponseEntity<Map<String, String>> resetMetrics() {
+        metricsService.resetMetrics();
+        jobService.clearAll();
+        return ResponseEntity.ok(Map.of("message", "All metrics and jobs cleared"));
+    }
 }
 

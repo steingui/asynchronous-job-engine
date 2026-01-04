@@ -141,22 +141,62 @@ public class MetricsService {
     }
 
     /**
+     * Resets all job execution metrics.
+     *
+     * <p>Clears and recreates all timers and counters, enabling fresh stress tests
+     * without restarting the server. Micrometer doesn't support direct reset,
+     * so we remove and re-register each meter.</p>
+     */
+    public void resetMetrics() {
+        for (ExecutionMode mode : ExecutionMode.values()) {
+            var modeTag = mode.name().toLowerCase();
+
+            // Remove old meters
+            meterRegistry.remove(executionTimers.get(mode));
+            meterRegistry.remove(completedCounters.get(mode));
+            meterRegistry.remove(failedCounters.get(mode));
+
+            // Recreate meters
+            executionTimers.put(mode, Timer.builder("job.execution.time")
+                    .tag("mode", modeTag)
+                    .description("Time taken to execute jobs")
+                    .register(meterRegistry));
+
+            completedCounters.put(mode, Counter.builder("job.completed.total")
+                    .tag("mode", modeTag)
+                    .description("Total number of completed jobs")
+                    .register(meterRegistry));
+
+            failedCounters.put(mode, Counter.builder("job.failed.total")
+                    .tag("mode", modeTag)
+                    .description("Total number of failed jobs")
+                    .register(meterRegistry));
+
+            // Reset active gauge
+            activeGauges.get(mode).set(0);
+        }
+
+        log.info("All metrics reset");
+    }
+
+    /**
      * Returns statistics for all execution modes.
      *
      * @return map of mode to statistics
      */
     public Map<String, ModeStats> getStats() {
-        Map<String, ModeStats> stats = new java.util.HashMap<>();
+        var stats = new java.util.HashMap<String, ModeStats>();
 
         for (ExecutionMode mode : ExecutionMode.values()) {
-            Timer timer = executionTimers.get(mode);
+            var timer = executionTimers.get(mode);
             stats.put(mode.name(), new ModeStats(
                     (long) completedCounters.get(mode).count(),
                     (long) failedCounters.get(mode).count(),
                     activeGauges.get(mode).get(),
                     timer.count() > 0 ? timer.mean(java.util.concurrent.TimeUnit.MILLISECONDS) : 0,
                     timer.count() > 0 ? timer.max(java.util.concurrent.TimeUnit.MILLISECONDS) : 0,
-                    timer.count()
+                    timer.count(),
+                    MODE_DESCRIPTIONS.get(mode)
             ));
         }
 
@@ -222,6 +262,7 @@ public class MetricsService {
      * @param avgExecutionTimeMs average execution time in milliseconds
      * @param maxExecutionTimeMs maximum execution time in milliseconds
      * @param totalExecutions    total number of executions
+     * @param description        technical description of the execution mode
      */
     public record ModeStats(
             long completedCount,
@@ -229,7 +270,38 @@ public class MetricsService {
             int activeCount,
             double avgExecutionTimeMs,
             double maxExecutionTimeMs,
-            long totalExecutions
+            long totalExecutions,
+            String description
     ) {}
+
+    private static final Map<ExecutionMode, String> MODE_DESCRIPTIONS = Map.of(
+            ExecutionMode.SEQUENTIAL,
+            "Executes jobs synchronously in the caller's thread (HTTP thread). " +
+            "Stack: Uses caller's stack frame (~few KB per call). " +
+            "Heap: Minimal - only Job and JobResult objects. " +
+            "GC: Low pressure, short-lived objects in Young Gen. " +
+            "Blocking: YES - blocks HTTP thread until completion. " +
+            "Parallelism: NONE - one job at a time. " +
+            "Best for: Simple workloads, debugging, when ordering matters.",
+
+            ExecutionMode.THREAD_POOL,
+            "Executes jobs in a fixed pool of platform (OS) threads. " +
+            "Stack: Each thread has ~1MB native stack (16 threads = ~16MB reserved). " +
+            "Heap: Thread objects, Runnable tasks, work queue consume heap. " +
+            "GC: More threads = more GC roots to scan, possible longer pauses. " +
+            "Context Switching: OS scheduler switches threads (~1-10μs per switch). " +
+            "Parallelism: Limited to pool size (default: CPU cores). " +
+            "Best for: CPU-bound tasks, controlled concurrency, mixed workloads.",
+
+            ExecutionMode.ASYNC,
+            "Executes jobs using Virtual Threads (Java 21+ Project Loom). " +
+            "Stack: Stored on heap (~few KB), grows as needed. Millions possible. " +
+            "Heap: Virtual thread stacks are GC'd when thread completes. " +
+            "Carrier Threads: Virtual threads run on platform thread pool (≈ CPU cores). " +
+            "Blocking: When blocked on I/O, virtual thread unmounts, freeing carrier. " +
+            "Continuation: Stack saved as heap object, resumed on any carrier. " +
+            "Parallelism: Massive - thousands/millions concurrent with minimal overhead. " +
+            "Best for: I/O-bound tasks, high-concurrency, microservices."
+    );
 }
 
