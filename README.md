@@ -1,287 +1,174 @@
-# Asynchronous Job Engine
+# Job Engine
 
-A Spring Boot application for processing jobs asynchronously with multiple execution modes.
+Engine de jobs com 3 modos de execução para estudo de concorrência na JVM (Java Virtual Machine).
 
-## Overview
-
-This project provides a job processing engine designed to strengthen understanding of:
-- JVM internals (GC, heap vs stack)
-- Concurrency (thread pools, async)
-- Performance profiling with Java Flight Recorder
-
-## Features
-
-- **Three Execution Modes:**
-  - **Sequential** - Simple executor for single-threaded processing
-  - **Thread-based** - ThreadPoolExecutor for concurrent processing
-  - **Async** - CompletableFuture / Virtual Threads for non-blocking I/O
-
-- **REST API** for job submission, status tracking, and result retrieval
-- **Performance Metrics** for each execution mode
-- **Configurable** thread pools, timeouts, and I/O simulation
-
-## Tech Stack
-
-- Java 21 (LTS)
-- Spring Boot 3.4.1
-- Gradle 8.12
-- Micrometer 1.14.x (metrics)
-- Logback with Logstash Encoder 8.0 (structured logging)
-
-## Getting Started
-
-### Prerequisites
-
-- Java 21 or higher
-- Gradle 8.x (or use the wrapper)
-
-### Install Java 21
+## Executar
 
 ```bash
-# Ubuntu/Debian
-sudo apt install openjdk-21-jdk
-
-# Or using SDKMAN
-curl -s "https://get.sdkman.io" | bash
-sdk install java 21-tem
-```
-
-### Build
-
-```bash
-./gradlew build
-```
-
-### Run
-
-```bash
+# Iniciar servidor
 ./gradlew bootRun
+
+# Ou usar o script de stress test (inicia automaticamente)
+./scripts/stress-test.sh 100
 ```
 
-The application will start on `http://localhost:8080`.
+## Modos de Execução
 
-## API Endpoints
+| Modo | Como funciona | Melhor para |
+|------|---------------|-------------|
+| **SEQUENTIAL** | Uma thread (linha de execução), jobs em série | Debug, quando ordem importa |
+| **THREAD_POOL** | Pool fixo de threads (~16 linhas paralelas) | Cálculos intensivos (CPU-bound) |
+| **ASYNC** | Virtual Threads (threads leves, milhões possíveis) | Operações de espera (I/O-bound) |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/jobs` | Submit a new job |
-| GET | `/api/jobs/{id}` | Get job details |
-| GET | `/api/jobs/{id}/status` | Get job status |
-| GET | `/api/jobs/{id}/results` | Get job results |
-| GET | `/api/jobs` | List all jobs |
-| POST | `/api/jobs/batch` | Submit batch for load testing |
-| GET | `/api/metrics/compare` | Compare mode performance |
-| GET | `/api/metrics/active` | Get active job counts |
-| DELETE | `/api/jobs` | Clear all jobs |
+### O que significa CPU-bound e I/O-bound?
 
-### Example: Submit a Job
+- **CPU-bound** = Trabalho que usa processador intensamente (cálculos, compressão, criptografia)
+- **I/O-bound** = Trabalho que espera por algo externo (rede, banco de dados, arquivos)
+
+### Comparativo Técnico
+
+```
+                SEQUENTIAL          THREAD_POOL         ASYNC
+                    │                   │                 │
+Stack (memória)  1 thread            N × 1MB           ~KB (leve)
+Paralelismo      Nenhum              Limitado          Milhões
+Troca de contexto Zero               ~1-10μs           Mínimo
+Limpeza memória  Rápida              Mais lenta        Rápida
+Durante espera   Trava tudo          Trava N threads   Libera recursos
+```
+
+**Glossário da tabela:**
+- **Stack**: Memória reservada para cada thread executar
+- **Troca de contexto**: Tempo que o sistema leva para alternar entre threads
+- **GC** (Garbage Collector): "Lixeiro" automático do Java que libera memória de objetos que não são mais usados. Mais threads = mais trabalho para o GC = possíveis pausas na aplicação
+
+### Quando usar cada modo?
+
+```
+┌──────────────────────────┐
+│  Seu trabalho é mais:    │
+└────────────┬─────────────┘
+             │
+    ┌────────┴────────┐
+    ▼                 ▼
+┌────────┐       ┌────────┐
+│Cálculo │       │Espera  │
+│intenso │       │(rede,  │
+│(CPU)   │       │ disco) │
+└───┬────┘       └───┬────┘
+    │                │
+    ▼                ▼
+THREAD_POOL    ┌─────────────┐
+               │ Quantas     │
+               │ tarefas?    │
+               └──────┬──────┘
+                      │
+            ┌─────────┴─────────┐
+            ▼                   ▼
+       ┌────────┐          ┌────────┐
+       │ Poucas │          │ Muitas │
+       │ (<100) │          │ (>100) │
+       └───┬────┘          └───┬────┘
+           │                   │
+           ▼                   ▼
+      THREAD_POOL           ASYNC
+```
+
+## API
 
 ```bash
+# Submeter job
 curl -X POST http://localhost:8080/api/jobs \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "test-job",
-    "payload": "sample data to process",
-    "executionMode": "ASYNC"
-  }'
-```
+  -d '{"name": "meu-job", "payload": "dados", "executionMode": "ASYNC"}'
 
-### Example: Run Load Test
-
-```bash
-# Submit 100 jobs for each mode
-curl -X POST http://localhost:8080/api/jobs/batch \
-  -H "Content-Type: application/json" \
-  -d '{"count": 100}'
-
-# Wait for completion, then compare
+# Ver métricas comparativas
 curl http://localhost:8080/api/metrics/compare
+
+# Resetar métricas (zerar contadores)
+curl -X DELETE http://localhost:8080/api/metrics
 ```
 
-## Execution Modes Explained
+### Endpoints (URLs disponíveis)
 
-### SEQUENTIAL
-- Jobs run one at a time in the caller's thread
-- **Best for:** Simple workloads, debugging, guaranteed ordering
-- **JVM Impact:** Minimal - single stack frame, low GC pressure
-- **Trade-off:** No parallelism, blocks caller
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/jobs` | Criar job |
+| GET | `/api/jobs` | Listar jobs |
+| GET | `/api/jobs/{id}` | Detalhes do job |
+| GET | `/api/metrics/compare` | Comparar performance dos modos |
+| DELETE | `/api/metrics` | Zerar métricas |
 
-### THREAD_POOL
-- Jobs run in parallel using a ThreadPoolExecutor
-- **Best for:** CPU-bound tasks, controlled parallelism
-- **JVM Impact:** Each thread uses ~1MB stack, context switching overhead
-- **Trade-off:** Limited by pool size, blocked threads waste resources
-
-### ASYNC (Virtual Threads)
-- Jobs run using Java 21 Virtual Threads
-- **Best for:** I/O-bound tasks, high concurrency
-- **JVM Impact:** Lightweight (~few KB per thread), heap-based stacks
-- **Trade-off:** Not faster for CPU-bound work
-
-## Metrics
-
-Access metrics at:
-- Health: `http://localhost:8080/actuator/health`
-- Metrics: `http://localhost:8080/actuator/metrics`
-- Prometheus: `http://localhost:8080/actuator/prometheus`
-
-### Key Metrics
-
-| Metric | Description |
-|--------|-------------|
-| `job.execution.time` | Execution time histogram by mode |
-| `job.completed.total` | Counter of completed jobs by mode |
-| `job.failed.total` | Counter of failed jobs by mode |
-| `job.active` | Gauge of active jobs by mode |
-| `job.thread_pool.active` | Active threads in the thread pool |
-| `job.thread_pool.queue_size` | Tasks waiting in queue |
-
-## Performance Profiling
-
-### Java Flight Recorder
-
-Run with JFR enabled:
+## Stress Test (Teste de Carga)
 
 ```bash
-./gradlew bootRun --args='--spring.profiles.active=default' \
-  -Dorg.gradle.jvmargs='-XX:StartFlightRecording=duration=60s,filename=recording.jfr'
+# 100 jobs por modo (300 total)
+./scripts/stress-test.sh 100
+
+# 500 jobs por modo
+./scripts/stress-test.sh 500
 ```
 
-Or attach to running process:
+O script automaticamente:
+1. Inicia a API se não estiver rodando
+2. Zera métricas anteriores
+3. Submete jobs em paralelo para os 3 modos
+4. Aguarda todos os jobs terminarem
+5. Exibe resultados comparativos
+6. Abre o navegador com os resultados
 
-```bash
-jcmd <pid> JFR.start duration=60s filename=recording.jfr
-```
-
-Analyze with JDK Mission Control:
-
-```bash
-jmc recording.jfr
-```
-
-### Monitor Virtual Thread Pinning
-
-```bash
-java -Djdk.tracePinnedThreads=full -jar build/libs/asynchronous-job-engine.jar
-```
-
-## Configuration
-
-Edit `src/main/resources/application.yml` to customize:
+## Configuração
 
 ```yaml
+# application.yml
 job-engine:
   thread-pool:
-    core-size: 4      # Minimum threads
-    max-size: 16      # Maximum threads
-    queue-capacity: 100
-    keep-alive-seconds: 60
-  
-  async:
-    timeout-seconds: 300
-    use-virtual-threads: true  # Set false to use cached thread pool
-  
+    core-size: 4      # Threads mínimas sempre ativas
+    max-size: 16      # Máximo de threads sob carga
   io-simulation:
-    min-latency-ms: 50   # Simulate I/O delay
-    max-latency-ms: 500
+    min-latency-ms: 50   # Simula espera mínima (milissegundos)
+    max-latency-ms: 500  # Simula espera máxima
 ```
 
-## Performance Report Guide
+## Entendendo os Resultados
 
-After running load tests, the `/api/metrics/compare` endpoint returns:
+Após o stress test, você verá algo como:
 
 ```json
 {
   "modeStats": {
-    "SEQUENTIAL": {
+    "ASYNC": {
       "completedCount": 100,
-      "failedCount": 0,
-      "activeCount": 0,
-      "avgExecutionTimeMs": 275.5,
-      "maxExecutionTimeMs": 498.0,
-      "totalExecutions": 100
+      "avgExecutionTimeMs": 275.5
     },
     "THREAD_POOL": {
       "completedCount": 100,
-      "failedCount": 0,
-      "activeCount": 0,
-      "avgExecutionTimeMs": 273.2,
-      "maxExecutionTimeMs": 495.0,
-      "totalExecutions": 100
+      "avgExecutionTimeMs": 280.2
     },
-    "ASYNC": {
+    "SEQUENTIAL": {
       "completedCount": 100,
-      "failedCount": 0,
-      "activeCount": 0,
-      "avgExecutionTimeMs": 271.8,
-      "maxExecutionTimeMs": 492.0,
-      "totalExecutions": 100
+      "avgExecutionTimeMs": 278.1
     }
   },
   "summary": {
-    "totalCompleted": 300,
-    "totalFailed": 0,
-    "totalActive": 0,
     "fastestMode": "ASYNC"
   }
 }
 ```
 
-### Interpreting Results
+- **completedCount**: Quantos jobs terminaram
+- **avgExecutionTimeMs**: Tempo médio por job (menor = melhor)
+- **fastestMode**: Qual modo foi mais rápido
 
-| Metric | What it tells you |
-|--------|-------------------|
-| `avgExecutionTimeMs` | Average per-job time. Lower is better. |
-| `maxExecutionTimeMs` | Worst-case latency. Important for SLAs. |
-| `totalExecutions` | Sample size. More = more reliable stats. |
-| `fastestMode` | Which mode had lowest avg time. |
+## Documentação Adicional
 
-### Expected Behavior
+- [Jornada de um Job](docs/JORNADA-JOB.md) - O que acontece quando você envia um job
+- [Trade-offs detalhados](docs/TRADEOFFS.md) - Análise técnica profunda de cada modo
+- [JavaDoc](build/docs/javadoc/index.html) - Documentação do código (gerar com `./gradlew javadoc`)
 
-For **I/O-bound workloads** (like this simulation):
-- **SEQUENTIAL:** Total time ≈ N × avg_latency (serial execution)
-- **THREAD_POOL:** Total time ≈ N × avg_latency / pool_size
-- **ASYNC:** Total time ≈ avg_latency (all run concurrently)
+## Tecnologias
 
-**Virtual threads shine when:**
-- Many concurrent blocking operations
-- I/O-heavy workloads (HTTP, database, file)
-- You need >1000 concurrent tasks
-
-**Thread pool is better when:**
-- CPU-bound calculations
-- You need predictable resource usage
-- Legacy libraries with thread-local state
-
-## Project Structure
-
-```
-src/main/java/com/jobengine/
-├── Application.java          # Entry point
-├── config/
-│   ├── ExecutorConfig.java   # Thread pool beans
-│   └── JobEngineProperties.java
-├── model/
-│   ├── Job.java
-│   ├── JobStatus.java
-│   ├── JobResult.java
-│   └── ExecutionMode.java
-├── executor/
-│   ├── JobExecutor.java      # Interface
-│   ├── SequentialJobExecutor.java
-│   ├── ThreadPoolJobExecutor.java
-│   └── AsyncJobExecutor.java
-├── service/
-│   ├── JobService.java
-│   ├── IOSimulator.java
-│   └── MetricsService.java
-├── controller/
-│   ├── JobController.java
-│   └── dto/
-└── exception/
-    └── GlobalExceptionHandler.java
-```
-
-## License
-
-MIT
+- **Java 21** - Linguagem de programação
+- **Spring Boot 3.4** - Framework web
+- **Micrometer** - Biblioteca de métricas
+- **Gradle** - Ferramenta de build (compilação)

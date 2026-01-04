@@ -21,8 +21,8 @@ job-engine:
   
   # I/O simulation settings
   io-simulation:
-    min-latency-ms: 50
-    max-latency-ms: 500
+    min-latency-ms: 10
+    max-latency-ms: 1000
 
 # Actuator endpoints for metrics
 management:
