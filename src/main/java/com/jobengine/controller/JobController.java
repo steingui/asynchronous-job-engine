@@ -196,12 +196,16 @@ public class JobController {
     /**
      * Returns performance metrics comparison across execution modes.
      *
-     * @return metrics for each mode
+     * <p>Includes job execution statistics per mode and JVM system metrics
+     * (memory, CPU, threads).</p>
+     *
+     * @return metrics for each mode plus system info
      */
     @GetMapping("/metrics/compare")
     public ResponseEntity<MetricsResponse> compareMetrics() {
         var stats = metricsService.getStats();
-        return ResponseEntity.ok(MetricsResponse.from(stats));
+        var system = metricsService.getSystemMetrics();
+        return ResponseEntity.ok(MetricsResponse.from(stats, system));
     }
 
     /**

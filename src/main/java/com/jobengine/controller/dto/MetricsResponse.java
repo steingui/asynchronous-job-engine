@@ -9,30 +9,33 @@ import java.util.Map;
  *
  * @param modeStats statistics for each execution mode
  * @param summary   overall summary
+ * @param system    JVM and system metrics
  */
 public record MetricsResponse(
         Map<String, ModeStats> modeStats,
-        Summary summary
+        Summary summary,
+        SystemMetrics system
 ) {
 
     /**
-     * Creates a metrics response from mode statistics.
+     * Creates a metrics response from mode statistics and system metrics.
      *
-     * @param stats the mode statistics
+     * @param stats  the mode statistics
+     * @param system the system metrics
      * @return metrics response
      */
-    public static MetricsResponse from(Map<String, ModeStats> stats) {
-        long totalCompleted = stats.values().stream()
+    public static MetricsResponse from(Map<String, ModeStats> stats, SystemMetrics system) {
+        var totalCompleted = stats.values().stream()
                 .mapToLong(ModeStats::completedCount)
                 .sum();
-        long totalFailed = stats.values().stream()
+        var totalFailed = stats.values().stream()
                 .mapToLong(ModeStats::failedCount)
                 .sum();
-        int totalActive = stats.values().stream()
+        var totalActive = stats.values().stream()
                 .mapToInt(ModeStats::activeCount)
                 .sum();
 
-        String fastestMode = stats.entrySet().stream()
+        var fastestMode = stats.entrySet().stream()
                 .filter(e -> e.getValue().totalExecutions() > 0)
                 .min((a, b) -> Double.compare(
                         a.getValue().avgExecutionTimeMs(),
@@ -42,7 +45,8 @@ public record MetricsResponse(
 
         return new MetricsResponse(
                 stats,
-                new Summary(totalCompleted, totalFailed, totalActive, fastestMode)
+                new Summary(totalCompleted, totalFailed, totalActive, fastestMode),
+                system
         );
     }
 

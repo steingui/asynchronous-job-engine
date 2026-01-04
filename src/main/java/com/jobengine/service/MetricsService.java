@@ -1,7 +1,9 @@
 package com.jobengine.service;
 
+import com.jobengine.controller.dto.SystemMetrics;
 import com.jobengine.model.ExecutionMode;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -159,6 +161,56 @@ public class MetricsService {
         }
 
         return stats;
+    }
+
+    /**
+     * Returns current system metrics from the JVM.
+     *
+     * <p>Reads metrics already collected by Spring Boot Actuator/Micrometer:</p>
+     * <ul>
+     *   <li>jvm.memory.used/max - Heap memory usage</li>
+     *   <li>process.cpu.usage - Process CPU utilization</li>
+     *   <li>jvm.threads.live/peak - Thread counts</li>
+     * </ul>
+     *
+     * @return system metrics snapshot
+     */
+    public SystemMetrics getSystemMetrics() {
+        var heapUsed = (long) getGaugeValue("jvm.memory.used", "area", "heap");
+        var heapMax = (long) getGaugeValue("jvm.memory.max", "area", "heap");
+        var cpuUsage = getGaugeValue("process.cpu.usage") * 100;
+        var liveThreads = (int) getGaugeValue("jvm.threads.live");
+        var peakThreads = (int) getGaugeValue("jvm.threads.peak");
+
+        var heapUsedMb = heapUsed / (1024 * 1024);
+        var heapMaxMb = heapMax / (1024 * 1024);
+        var heapUsagePercent = heapMax > 0 ? (heapUsed * 100.0 / heapMax) : 0;
+
+        return new SystemMetrics(
+                heapUsedMb,
+                heapMaxMb,
+                heapUsagePercent,
+                cpuUsage,
+                Runtime.getRuntime().availableProcessors(),
+                liveThreads,
+                peakThreads
+        );
+    }
+
+    /**
+     * Helper method to read gauge values from the meter registry.
+     *
+     * @param name the metric name
+     * @param tags optional tag key-value pairs (key1, value1, key2, value2, ...)
+     * @return the gauge value, or 0 if not found
+     */
+    private double getGaugeValue(String name, String... tags) {
+        var search = meterRegistry.find(name);
+        if (tags.length >= 2) {
+            search = search.tag(tags[0], tags[1]);
+        }
+        Gauge gauge = search.gauge();
+        return gauge != null ? gauge.value() : 0;
     }
 
     /**
