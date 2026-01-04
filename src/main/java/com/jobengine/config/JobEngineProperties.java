@@ -20,11 +20,14 @@ public class JobEngineProperties {
 
     private final ThreadPoolConfig threadPool;
     private final AsyncConfig async;
+    private final CpuSimulationConfig cpuSimulation;
     private final IoSimulationConfig ioSimulation;
 
-    public JobEngineProperties(ThreadPoolConfig threadPool, AsyncConfig async, IoSimulationConfig ioSimulation) {
+    public JobEngineProperties(ThreadPoolConfig threadPool, AsyncConfig async, 
+                               CpuSimulationConfig cpuSimulation, IoSimulationConfig ioSimulation) {
         this.threadPool = threadPool != null ? threadPool : new ThreadPoolConfig(4, 16, 100, 60);
         this.async = async != null ? async : new AsyncConfig(300, true);
+        this.cpuSimulation = cpuSimulation != null ? cpuSimulation : new CpuSimulationConfig(true, 10000, 100000);
         this.ioSimulation = ioSimulation != null ? ioSimulation : new IoSimulationConfig(50, 500, 0.0, 0.0, 5000);
     }
 
@@ -36,8 +39,31 @@ public class JobEngineProperties {
         return async;
     }
 
+    public CpuSimulationConfig getCpuSimulation() {
+        return cpuSimulation;
+    }
+
     public IoSimulationConfig getIoSimulation() {
         return ioSimulation;
+    }
+
+    /**
+     * CPU simulation configuration for CPU-bound work.
+     *
+     * @param enabled       whether CPU simulation is enabled
+     * @param minPrimeLimit minimum value for random prime calculation limit
+     * @param maxPrimeLimit maximum value for random prime calculation limit
+     */
+    public record CpuSimulationConfig(
+            boolean enabled,
+            @Min(100) int minPrimeLimit,
+            @Min(100) int maxPrimeLimit
+    ) {
+        public CpuSimulationConfig {
+            if (maxPrimeLimit < minPrimeLimit) {
+                throw new IllegalArgumentException("maxPrimeLimit must be >= minPrimeLimit");
+            }
+        }
     }
 
     /**

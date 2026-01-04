@@ -4,6 +4,7 @@ import com.jobengine.model.ExecutionMode;
 import com.jobengine.model.Job;
 import com.jobengine.model.JobResult;
 import com.jobengine.model.JobStatus;
+import com.jobengine.service.CPUSimulator;
 import com.jobengine.service.IOSimulator;
 import com.jobengine.service.MetricsService;
 import org.slf4j.Logger;
@@ -102,6 +103,7 @@ public class ThreadPoolJobExecutor implements JobExecutor {
     private static final Logger log = LoggerFactory.getLogger(ThreadPoolJobExecutor.class);
 
     private final ThreadPoolExecutor threadPoolExecutor;
+    private final CPUSimulator cpuSimulator;
     private final IOSimulator ioSimulator;
     private final MetricsService metricsService;
 
@@ -109,13 +111,16 @@ public class ThreadPoolJobExecutor implements JobExecutor {
      * Constructs a ThreadPoolJobExecutor with the required dependencies.
      *
      * @param threadPoolExecutor the thread pool to use for execution
+     * @param cpuSimulator       simulator for CPU-bound operations
      * @param ioSimulator        simulator for I/O operations
      * @param metricsService     service for recording metrics
      */
     public ThreadPoolJobExecutor(ThreadPoolExecutor threadPoolExecutor,
+                                  CPUSimulator cpuSimulator,
                                   IOSimulator ioSimulator,
                                   MetricsService metricsService) {
         this.threadPoolExecutor = threadPoolExecutor;
+        this.cpuSimulator = cpuSimulator;
         this.ioSimulator = ioSimulator;
         this.metricsService = metricsService;
     }
@@ -145,9 +150,15 @@ public class ThreadPoolJobExecutor implements JobExecutor {
         log.debug("Thread pool execution started: jobId={}, thread={}", 
                 job.getId(), Thread.currentThread().getName());
 
+        // Generate random limit ONCE (reused across retries)
+        var primeLimit = cpuSimulator.generateRandomLimit();
+
         try {
-            // Simulate I/O work
-            var result = ioSimulator.simulateWork(job.getPayload());
+            // CPU-bound work: calculate primes
+            var primesFound = cpuSimulator.countPrimesUpTo(primeLimit);
+            
+            // I/O-bound work: simulate network/database call
+            var result = ioSimulator.simulateWork(job.getPayload() + " [primes=" + primesFound + "]");
 
             var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.COMPLETED);

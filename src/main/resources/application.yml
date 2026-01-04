@@ -19,8 +19,13 @@ job-engine:
     timeout-seconds: 300
     use-virtual-threads: true
   
+  # CPU simulation settings (CPU-bound work)
+  cpu-simulation:
+    enabled: true
+    min-prime-limit: 500000    # mínimo do random 30-50ms
+    max-prime-limit: 5000000   # máximo do random 300-500ms
+  
   # I/O simulation settings
-  io-simulation:
     min-latency-ms: 200
     max-latency-ms: 400
     # Chaos testing (simula falhas do mundo real)

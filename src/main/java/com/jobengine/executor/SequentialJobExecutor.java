@@ -4,6 +4,7 @@ import com.jobengine.model.ExecutionMode;
 import com.jobengine.model.Job;
 import com.jobengine.model.JobResult;
 import com.jobengine.model.JobStatus;
+import com.jobengine.service.CPUSimulator;
 import com.jobengine.service.IOSimulator;
 import com.jobengine.service.MetricsService;
 import org.slf4j.Logger;
@@ -79,6 +80,7 @@ public class SequentialJobExecutor implements JobExecutor {
 
     private static final Logger log = LoggerFactory.getLogger(SequentialJobExecutor.class);
 
+    private final CPUSimulator cpuSimulator;
     private final IOSimulator ioSimulator;
     private final MetricsService metricsService;
     private final AtomicInteger activeCount = new AtomicInteger(0);
@@ -86,10 +88,12 @@ public class SequentialJobExecutor implements JobExecutor {
     /**
      * Constructs a SequentialJobExecutor with the required dependencies.
      *
+     * @param cpuSimulator   simulator for CPU-bound operations
      * @param ioSimulator    simulator for I/O operations
      * @param metricsService service for recording metrics
      */
-    public SequentialJobExecutor(IOSimulator ioSimulator, MetricsService metricsService) {
+    public SequentialJobExecutor(CPUSimulator cpuSimulator, IOSimulator ioSimulator, MetricsService metricsService) {
+        this.cpuSimulator = cpuSimulator;
         this.ioSimulator = ioSimulator;
         this.metricsService = metricsService;
     }
@@ -107,9 +111,15 @@ public class SequentialJobExecutor implements JobExecutor {
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
 
+        // Generate random limit ONCE (reused across retries)
+        var primeLimit = cpuSimulator.generateRandomLimit();
+
         try {
-            // Simulate I/O work
-            var result = ioSimulator.simulateWork(job.getPayload());
+            // CPU-bound work: calculate primes
+            var primesFound = cpuSimulator.countPrimesUpTo(primeLimit);
+            
+            // I/O-bound work: simulate network/database call
+            var result = ioSimulator.simulateWork(job.getPayload() + " [primes=" + primesFound + "]");
             
             var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.COMPLETED);

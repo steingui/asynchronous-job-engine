@@ -27,6 +27,74 @@ THREAD_POOL │
 
 ---
 
+## CPU-bound vs I/O-bound
+
+Este projeto simula **ambos os tipos de trabalho** para demonstrar como cada modo se comporta.
+
+### Definições
+
+| Tipo | O que faz | Exemplo real | Simulação |
+|------|-----------|--------------|-----------|
+| **CPU-bound** | Usa processador intensamente | Criptografia, parsing JSON, compressão | `CPUSimulator.countPrimesUpTo()` |
+| **I/O-bound** | Espera recurso externo | Query no banco, chamada HTTP, leitura de arquivo | `IOSimulator.simulateWork()` |
+
+### Exemplos práticos
+
+```java
+// CPU-bound: CPU ocupada 100% do tempo
+// Não há "espera", só processamento
+long count = countPrimesUpTo(1_000_000);  // ~50-100ms de CPU puro
+
+// I/O-bound: CPU ociosa 99% do tempo
+// Thread fica parada esperando resposta
+String response = httpClient.get("https://api.externa.com");  // ~200ms de espera
+```
+
+### Comportamento por modo
+
+| Modo | CPU-bound (primos) | I/O-bound (sleep) |
+|------|-------------------|-------------------|
+| **SEQUENTIAL** | Bloqueia HTTP thread | Bloqueia HTTP thread |
+| **THREAD_POOL** | Paralelo em N cores ✓ | Threads bloqueadas desperdiçadas |
+| **ASYNC** | Sem vantagem (CPU precisa de cores reais) | Virtual Thread libera carrier ✓ |
+
+### Por que simular ambos?
+
+No mundo real, jobs raramente são 100% CPU ou 100% I/O. Tipicamente:
+
+```
+┌─────────────────────────────────────────┐
+│  Job típico de processamento            │
+│                                         │
+│  1. Valida payload (CPU)         ~1ms   │
+│  2. Parse JSON (CPU)             ~5ms   │
+│  3. Query no banco (I/O)       ~100ms   │
+│  4. Processa resultado (CPU)    ~10ms   │
+│  5. Envia webhook (I/O)        ~200ms   │
+│                                         │
+│  Total: ~316ms                          │
+│  CPU: ~16ms (5%)                        │
+│  I/O: ~300ms (95%)                      │
+└─────────────────────────────────────────┘
+```
+
+Este job é **I/O-bound** (95% esperando) → melhor modo: **ASYNC**
+
+### Configuração
+
+```yaml
+job-engine:
+  cpu-simulation:
+    enabled: true
+    min-prime-limit: 10000    # ~1ms
+    max-prime-limit: 100000   # ~5-10ms
+  io-simulation:
+    min-latency-ms: 200       # ~200-400ms
+    max-latency-ms: 400
+```
+
+---
+
 ## SEQUENTIAL
 
 ### Funcionamento
