@@ -160,9 +160,5 @@ echo ""
 echo "Tips:"
 echo "  - View logs: tail -f /tmp/job-engine.log"
 echo "  - Stop API:  pkill -f 'gradlew bootRun'"
+echo "  - Grafana:   http://localhost:3000"
 echo "=========================================="
-
-# Open browser with metrics compare page
-echo ""
-echo "Opening metrics in browser..."
-xdg-open "$BASE_URL/api/metrics/compare" 2>/dev/null &
