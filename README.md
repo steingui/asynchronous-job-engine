@@ -83,7 +83,13 @@ job-engine:
   io-simulation:
     min-latency-ms: 200
     max-latency-ms: 400
+    # Chaos testing (simula falhas reais)
+    failure-rate: 0.10        # 10% chance de falha
+    timeout-rate: 0.05        # 5% chance de latência extrema
+    timeout-latency-ms: 5000  # 5s quando timeout
 ```
+
+Para desativar chaos, use `failure-rate: 0` e `timeout-rate: 0`.
 
 ## Documentação
 

@@ -25,7 +25,7 @@ public class JobEngineProperties {
     public JobEngineProperties(ThreadPoolConfig threadPool, AsyncConfig async, IoSimulationConfig ioSimulation) {
         this.threadPool = threadPool != null ? threadPool : new ThreadPoolConfig(4, 16, 100, 60);
         this.async = async != null ? async : new AsyncConfig(300, true);
-        this.ioSimulation = ioSimulation != null ? ioSimulation : new IoSimulationConfig(50, 500);
+        this.ioSimulation = ioSimulation != null ? ioSimulation : new IoSimulationConfig(50, 500, 0.0, 0.0, 5000);
     }
 
     public ThreadPoolConfig getThreadPool() {
@@ -75,12 +75,18 @@ public class JobEngineProperties {
     /**
      * I/O simulation configuration for testing.
      *
-     * @param minLatencyMs minimum simulated latency in milliseconds
-     * @param maxLatencyMs maximum simulated latency in milliseconds
+     * @param minLatencyMs     minimum simulated latency in milliseconds
+     * @param maxLatencyMs     maximum simulated latency in milliseconds
+     * @param failureRate      probability of random failure (0.0 to 1.0)
+     * @param timeoutRate      probability of extreme latency (0.0 to 1.0)
+     * @param timeoutLatencyMs latency in ms when timeout occurs
      */
     public record IoSimulationConfig(
             @Min(0) int minLatencyMs,
-            @Min(0) int maxLatencyMs
+            @Min(0) int maxLatencyMs,
+            @Min(0) @Max(1) double failureRate,
+            @Min(0) @Max(1) double timeoutRate,
+            @Min(0) int timeoutLatencyMs
     ) {
         public IoSimulationConfig {
             if (maxLatencyMs < minLatencyMs) {

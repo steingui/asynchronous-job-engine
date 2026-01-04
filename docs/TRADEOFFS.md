@@ -267,6 +267,41 @@ Virtual Threads **não são mais rápidas** para CPU-bound. A vantagem aparece c
 
 ---
 
+## Chaos Testing
+
+Simula falhas do mundo real para testar resiliência.
+
+### Configuração
+
+```yaml
+io-simulation:
+  failure-rate: 0.10        # 10% dos jobs falham
+  timeout-rate: 0.05        # 5% demoram muito mais
+  timeout-latency-ms: 5000  # 5 segundos de latência extrema
+```
+
+### O que simula
+
+| Parâmetro | Simula |
+|-----------|--------|
+| `failure-rate` | Rede caiu, banco indisponível, serviço fora |
+| `timeout-rate` | Query lenta, API externa travada |
+
+### Resultado esperado
+
+Com 100 jobs por modo (300 total) e 10% failure-rate:
+- ~30 jobs em `failedCount`
+- Alguns com `maxExecutionTimeMs` alto (timeout)
+
+### Por que importa
+
+Sistemas reais falham. Testar com chaos revela:
+- Como o sistema se comporta sob falha
+- Se métricas de erro funcionam
+- Se timeouts estão configurados corretamente
+
+---
+
 ## Referências
 
 - [JEP 444: Virtual Threads](https://openjdk.org/jeps/444)

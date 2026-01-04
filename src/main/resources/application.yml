@@ -19,10 +19,14 @@ job-engine:
     timeout-seconds: 300
     use-virtual-threads: true
   
-  # I/O simulation settings (faixa menor = resultados mais consistentes)
+  # I/O simulation settings
   io-simulation:
     min-latency-ms: 200
     max-latency-ms: 400
+    # Chaos testing (simula falhas do mundo real)
+    failure-rate: 0.10        # 10% chance de falha aleatória
+    timeout-rate: 0.05        # 5% chance de latência extrema
+    timeout-latency-ms: 5000  # 5 segundos quando timeout
 
 # Actuator endpoints for metrics
 management:
