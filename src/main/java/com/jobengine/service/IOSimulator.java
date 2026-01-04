@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.jobengine.exception.IOSimulationException;
+
 /**
  * Simulates I/O-bound operations with configurable latency.
  *
@@ -60,7 +62,7 @@ public class IOSimulator {
      * @return a processed result string
      */
     public String simulateWork(String payload) {
-        int latency = calculateLatency();
+        var latency = calculateLatency();
         
         log.debug("Simulating I/O: latency={}ms, payloadLength={}", latency, 
                 payload != null ? payload.length() : 0);
@@ -69,7 +71,7 @@ public class IOSimulator {
             Thread.sleep(latency);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("I/O simulation interrupted", e);
+            throw new IOSimulationException("I/O simulation interrupted", e);
         }
 
         return "Processed: " + (payload != null ? payload : "empty") + " [latency=" + latency + "ms]";

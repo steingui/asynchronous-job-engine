@@ -1,23 +1,21 @@
----
+# Java Development Rules
 
-Context:
-This is a backend project for a financial system with high reliability requirements.
+## Tech Stack & Versioning
+- **Java Version:** Use Java 21 features (Records, Pattern Matching, Virtual Threads) where appropriate.
+- **Framework:** Prefer Spring Boot 3.x patterns if applicable.
+- **Build Tool:** Use Maven/Gradle (refer to existing build files).
 
-Tech stack:
-- Java (latest compatible)
-- Spring Boot (latest compatible)
-- Gradle (latest compatible)
+## Coding Standards
+- **Modern Syntax:** Use `var` for local variables when the type is obvious.
+- **Data Carriers:** Use `record` instead of Lombok or manual POJOs for immutable data.
+- **Functional Style:** Prefer Streams and Lambdas over manual loops for collection processing.
+- **Optional:** Use `Optional<T>` for return types that can be null; avoid `null` checks where possible.
 
-Coding standards:
-- Avoid static state
-- Prefer constructor injection
-- Do not use field injection
+## AI Behavior & Safety
+- **No Boilerplate:** Do not generate getters/setters unless explicitly asked; use Records.
+- **One Fix at a Time:** If fixing an error, change only one thing and ask for validation before proceeding.
+- **Stay Focused:** Do not refactor unrelated code or "clean up" files unless requested.
 
-Observability:
-- Always add structured logging
-- Use metrics where relevant
-
-Security:
-- Never log sensitive data
-- Validate all external inputs
-
+## Error Handling
+- Use **Sealed Classes** for representing restricted class hierarchies (e.g., Result/Error patterns).
+- Avoid generic `RuntimeException`; use or create specific checked/unchecked exceptions.

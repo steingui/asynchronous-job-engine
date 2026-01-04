@@ -17,6 +17,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.jobengine.exception.InvalidJobException;
+
 /**
  * Async job executor - processes jobs using virtual threads (Java 21+).
  *
@@ -133,7 +135,7 @@ public class AsyncJobExecutor implements JobExecutor {
     @Override
     public CompletableFuture<JobResult> execute(Job job) {
         if (job == null) {
-            throw new IllegalArgumentException("Job must not be null");
+            throw new InvalidJobException("Job must not be null");
         }
 
         log.debug("Submitting to virtual thread executor: jobId={}, jobName={}",
@@ -146,23 +148,23 @@ public class AsyncJobExecutor implements JobExecutor {
 
     private JobResult executeJob(Job job) {
         activeCount.incrementAndGet();
-        Instant startTime = Instant.now();
+        var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
 
-        Thread currentThread = Thread.currentThread();
+        var currentThread = Thread.currentThread();
         log.debug("Async execution started: jobId={}, thread={}, isVirtual={}",
                 job.getId(), currentThread.getName(), currentThread.isVirtual());
 
         try {
             // Simulate I/O work - virtual threads excel at this
-            String result = ioSimulator.simulateWork(job.getPayload());
+            var result = ioSimulator.simulateWork(job.getPayload());
 
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.success(job, result, executionTime);
+            var jobResult = JobResult.success(job, result, executionTime);
             metricsService.recordJobCompletion(ExecutionMode.ASYNC, executionTime, true);
 
             log.info("Async execution completed: jobId={}, thread={}, isVirtual={}, duration={}ms",
@@ -171,11 +173,11 @@ public class AsyncJobExecutor implements JobExecutor {
             return jobResult;
 
         } catch (Exception e) {
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.FAILED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.failure(job, e.getMessage(), executionTime);
+            var jobResult = JobResult.failure(job, e.getMessage(), executionTime);
             metricsService.recordJobCompletion(ExecutionMode.ASYNC, executionTime, false);
 
             log.error("Async execution failed: jobId={}, thread={}, error={}",

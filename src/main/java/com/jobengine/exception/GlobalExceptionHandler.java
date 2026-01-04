@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,7 +30,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult()
+        var errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -53,7 +52,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleMessageNotReadable(HttpMessageNotReadableException ex) {
-        String message = "Invalid request body";
+        var message = "Invalid request body";
         
         // Extract more specific error for enum mismatches
         if (ex.getMessage() != null && ex.getMessage().contains("ExecutionMode")) {
@@ -75,7 +74,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String message = String.format("Invalid value for parameter '%s': %s", 
+        var message = String.format("Invalid value for parameter '%s': %s", 
                 ex.getName(), ex.getValue());
 
         log.warn("Type mismatch: {}", message);
@@ -84,6 +83,28 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of(
                         "error", message,
+                        "timestamp", Instant.now()
+                ));
+    }
+
+    /**
+     * Handles job engine domain exceptions.
+     *
+     * <p>This handler catches all exceptions from the sealed {@link JobEngineException}
+     * hierarchy, providing type-safe error handling for domain-specific errors.</p>
+     *
+     * @param ex the job engine exception
+     * @return error response with exception details
+     */
+    @ExceptionHandler(JobEngineException.class)
+    public ResponseEntity<Map<String, Object>> handleJobEngineException(JobEngineException ex) {
+        log.warn("Job engine error: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "error", ex.getMessage(),
+                        "type", ex.getClass().getSimpleName(),
                         "timestamp", Instant.now()
                 ));
     }

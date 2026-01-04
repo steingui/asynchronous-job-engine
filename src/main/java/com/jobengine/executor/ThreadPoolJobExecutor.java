@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.jobengine.exception.InvalidJobException;
+
 /**
  * Thread pool job executor - processes jobs using a pool of platform threads.
  *
@@ -121,7 +123,7 @@ public class ThreadPoolJobExecutor implements JobExecutor {
     @Override
     public CompletableFuture<JobResult> execute(Job job) {
         if (job == null) {
-            throw new IllegalArgumentException("Job must not be null");
+            throw new InvalidJobException("Job must not be null");
         }
 
         log.debug("Submitting to thread pool: jobId={}, jobName={}, poolSize={}, activeThreads={}, queueSize={}",
@@ -136,7 +138,7 @@ public class ThreadPoolJobExecutor implements JobExecutor {
     }
 
     private JobResult executeJob(Job job) {
-        Instant startTime = Instant.now();
+        var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
 
@@ -145,13 +147,13 @@ public class ThreadPoolJobExecutor implements JobExecutor {
 
         try {
             // Simulate I/O work
-            String result = ioSimulator.simulateWork(job.getPayload());
+            var result = ioSimulator.simulateWork(job.getPayload());
 
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.success(job, result, executionTime);
+            var jobResult = JobResult.success(job, result, executionTime);
             metricsService.recordJobCompletion(ExecutionMode.THREAD_POOL, executionTime, true);
 
             log.info("Thread pool execution completed: jobId={}, thread={}, duration={}ms",
@@ -160,11 +162,11 @@ public class ThreadPoolJobExecutor implements JobExecutor {
             return jobResult;
 
         } catch (Exception e) {
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.FAILED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.failure(job, e.getMessage(), executionTime);
+            var jobResult = JobResult.failure(job, e.getMessage(), executionTime);
             metricsService.recordJobCompletion(ExecutionMode.THREAD_POOL, executionTime, false);
 
             log.error("Thread pool execution failed: jobId={}, thread={}, error={}",

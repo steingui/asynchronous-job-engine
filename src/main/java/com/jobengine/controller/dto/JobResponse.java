@@ -57,7 +57,7 @@ public record JobResponse(
      * @return job response DTO with result
      */
     public static JobResponse from(Job job, JobResult result) {
-        ResultDetails details = null;
+        var details = (ResultDetails) null;
         if (result != null) {
             details = new ResultDetails(
                     result.success(),

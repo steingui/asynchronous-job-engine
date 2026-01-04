@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.jobengine.exception.InvalidJobException;
+
 /**
  * Sequential job executor - processes jobs one at a time in the calling thread.
  *
@@ -95,25 +97,25 @@ public class SequentialJobExecutor implements JobExecutor {
     @Override
     public CompletableFuture<JobResult> execute(Job job) {
         if (job == null) {
-            throw new IllegalArgumentException("Job must not be null");
+            throw new InvalidJobException("Job must not be null");
         }
 
         log.debug("Starting sequential execution: jobId={}, jobName={}", job.getId(), job.getName());
         
         activeCount.incrementAndGet();
-        Instant startTime = Instant.now();
+        var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
 
         try {
             // Simulate I/O work
-            String result = ioSimulator.simulateWork(job.getPayload());
+            var result = ioSimulator.simulateWork(job.getPayload());
             
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.COMPLETED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.success(job, result, executionTime);
+            var jobResult = JobResult.success(job, result, executionTime);
             metricsService.recordJobCompletion(ExecutionMode.SEQUENTIAL, executionTime, true);
 
             log.info("Sequential execution completed: jobId={}, duration={}ms", 
@@ -122,11 +124,11 @@ public class SequentialJobExecutor implements JobExecutor {
             return CompletableFuture.completedFuture(jobResult);
 
         } catch (Exception e) {
-            Duration executionTime = Duration.between(startTime, Instant.now());
+            var executionTime = Duration.between(startTime, Instant.now());
             job.setStatus(JobStatus.FAILED);
             job.setCompletedAt(Instant.now());
 
-            JobResult jobResult = JobResult.failure(job, e.getMessage(), executionTime);
+            var jobResult = JobResult.failure(job, e.getMessage(), executionTime);
             metricsService.recordJobCompletion(ExecutionMode.SEQUENTIAL, executionTime, false);
 
             log.error("Sequential execution failed: jobId={}, error={}", job.getId(), e.getMessage());

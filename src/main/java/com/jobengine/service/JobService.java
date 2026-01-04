@@ -14,10 +14,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
@@ -66,13 +66,13 @@ public class JobService {
      * @return the created job
      */
     public Job submitJob(String name, String payload, ExecutionMode executionMode) {
-        Job job = new Job(name, payload, executionMode);
+        var job = new Job(name, payload, executionMode);
         jobStorage.put(job.getId(), job);
 
         log.info("Job submitted: id={}, name={}, mode={}", job.getId(), name, executionMode);
 
-        JobExecutor executor = executors.get(executionMode);
-        CompletableFuture<JobResult> future = executor.execute(job);
+        var executor = executors.get(executionMode);
+        var future = executor.execute(job);
 
         future.thenAccept(result -> {
             resultStorage.put(job.getId(), result);
@@ -109,7 +109,7 @@ public class JobService {
     public Map<ExecutionMode, List<Job>> submitBatchAllModes(int countPerMode) {
         log.info("Submitting batch for all modes: {} jobs per mode", countPerMode);
 
-        Map<ExecutionMode, List<Job>> result = new java.util.EnumMap<>(ExecutionMode.class);
+        var result = new EnumMap<ExecutionMode, List<Job>>(ExecutionMode.class);
 
         for (ExecutionMode mode : ExecutionMode.values()) {
             result.put(mode, submitBatch(countPerMode, mode));
@@ -187,7 +187,7 @@ public class JobService {
      * @return map of mode to active count
      */
     public Map<ExecutionMode, Integer> getActiveJobCounts() {
-        Map<ExecutionMode, Integer> counts = new java.util.EnumMap<>(ExecutionMode.class);
+        var counts = new EnumMap<ExecutionMode, Integer>(ExecutionMode.class);
         executors.forEach((mode, executor) -> counts.put(mode, executor.getActiveCount()));
         return counts;
     }
