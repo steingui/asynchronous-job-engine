@@ -1,6 +1,29 @@
 # Trade-offs dos Modos de Execução
 
-Análise técnica profunda de cada modo.
+Análise técnica dos 3 modos de execução do Job Engine.
+
+## Resumo
+
+| Modo | Estratégia | Melhor para |
+|------|------------|-------------|
+| **SEQUENTIAL** | 1 thread, jobs em série | Debug, ordenação |
+| **THREAD_POOL** | Pool de N threads paralelas | CPU-bound (cálculos intensivos) |
+| **ASYNC** | Virtual Threads (milhões) | I/O-bound (espera por rede/banco) |
+
+### Qual modo usar?
+
+```
+Seu trabalho é mais:
+        │
+   ┌────┴────┐
+   ▼         ▼
+Cálculo    Espera
+(CPU)      (I/O)
+   │         │
+   ▼         ├── Poucas tarefas → THREAD_POOL
+THREAD_POOL │
+             └── Muitas tarefas → ASYNC
+```
 
 ---
 
