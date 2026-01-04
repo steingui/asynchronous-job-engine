@@ -71,6 +71,33 @@ curl -X DELETE http://localhost:8080/api/metrics
 
 O script inicia a API automaticamente, reseta métricas, submete jobs e exibe resultados.
 
+## Resiliência
+
+O sistema usa **Resilience4j** para lidar com falhas:
+
+| Padrão | Comportamento |
+|--------|---------------|
+| **Retry** | Tenta 3x com backoff exponencial (500ms → 1s → 2s) |
+| **Fallback** | Após 3 falhas, retorna erro claro |
+
+```
+Job falhou (10% chance)
+       │
+       ▼
+  Retry 1 (espera 500ms)
+       │ falhou
+       ▼
+  Retry 2 (espera 1s)
+       │ falhou
+       ▼
+  Retry 3 (espera 2s)
+       │ falhou
+       ▼
+  Fallback → Job marcado FAILED
+```
+
+**Impacto:** `failedCount` cai de ~10% para ~1%.
+
 ## Configuração
 
 Edite `src/main/resources/application.yml`:
@@ -83,7 +110,21 @@ job-engine:
   io-simulation:
     min-latency-ms: 200
     max-latency-ms: 400
+    # Chaos testing (simula falhas reais)
+    failure-rate: 0.10        # 10% chance de falha
+    timeout-rate: 0.05        # 5% chance de latência extrema
+    timeout-latency-ms: 5000  # 5s quando timeout
+
+resilience4j:
+  retry:
+    instances:
+      ioSimulator:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
 ```
+
+Para desativar chaos, use `failure-rate: 0` e `timeout-rate: 0`.
 
 ## Documentação
 
