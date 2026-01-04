@@ -9,9 +9,9 @@ server:
 job-engine:
   # Thread pool settings for ThreadPoolExecutor mode
   thread-pool:
-    core-size: 4
-    max-size: 16
-    queue-capacity: 100
+    core-size: 12        # = número de CPUs para benchmark justo
+    max-size: 24         # 2x CPUs para picos
+    queue-capacity: 200
     keep-alive-seconds: 60
   
   # Async execution settings
@@ -19,10 +19,10 @@ job-engine:
     timeout-seconds: 300
     use-virtual-threads: true
   
-  # I/O simulation settings
+  # I/O simulation settings (faixa menor = resultados mais consistentes)
   io-simulation:
-    min-latency-ms: 10
-    max-latency-ms: 1000
+    min-latency-ms: 200
+    max-latency-ms: 400
 
 # Actuator endpoints for metrics
 management:
