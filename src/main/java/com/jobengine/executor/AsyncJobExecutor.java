@@ -153,6 +153,7 @@ public class AsyncJobExecutor implements JobExecutor {
 
     private JobResult executeJob(Job job) {
         activeCount.incrementAndGet();
+        metricsService.incrementActive(ExecutionMode.ASYNC);
         var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
@@ -198,6 +199,7 @@ public class AsyncJobExecutor implements JobExecutor {
 
         } finally {
             activeCount.decrementAndGet();
+            metricsService.decrementActive(ExecutionMode.ASYNC);
         }
     }
 

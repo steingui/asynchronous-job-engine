@@ -143,6 +143,7 @@ public class ThreadPoolJobExecutor implements JobExecutor {
     }
 
     private JobResult executeJob(Job job) {
+        metricsService.incrementActive(ExecutionMode.THREAD_POOL);
         var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
@@ -184,6 +185,8 @@ public class ThreadPoolJobExecutor implements JobExecutor {
                     job.getId(), Thread.currentThread().getName(), e.getMessage());
 
             return jobResult;
+        } finally {
+            metricsService.decrementActive(ExecutionMode.THREAD_POOL);
         }
     }
 

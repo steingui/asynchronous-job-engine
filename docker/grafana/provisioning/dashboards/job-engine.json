@@ -801,7 +801,7 @@
           }
         ]
       },
-      "gridPos": { "h": 7, "w": 6, "x": 6, "y": 31 },
+      "gridPos": { "h": 7, "w": 6, "x": 0, "y": 38 },
       "id": 42,
       "options": {
         "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -859,7 +859,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 7, "w": 6, "x": 12, "y": 31 },
+      "gridPos": { "h": 7, "w": 6, "x": 6, "y": 38 },
       "id": 43,
       "options": {
         "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -922,7 +922,7 @@
           }
         ]
       },
-      "gridPos": { "h": 7, "w": 6, "x": 18, "y": 31 },
+      "gridPos": { "h": 7, "w": 6, "x": 12, "y": 31 },
       "id": 44,
       "options": {
         "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -950,6 +950,77 @@
       ],
       "title": "Thread Pool",
       "description": "Pool de threads reais do sistema. Active = trabalhando, Queue = aguardando. Fila cheia = rejeições.",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "description": "Virtual Threads ativas no momento. Podem ser milhares simultâneas com baixo custo de memória.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Virtual Threads" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Peak" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "light-purple", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 7, "w": 6, "x": 18, "y": 31 },
+      "id": 45,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "job_active{mode=\"async\"}",
+          "legendFormat": "Virtual Threads",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus" },
+          "expr": "max_over_time(job_active{mode=\"async\"}[5m])",
+          "legendFormat": "Peak",
+          "refId": "B"
+        }
+      ],
+      "title": "Virtual Threads Active",
       "type": "timeseries"
     }
   ],

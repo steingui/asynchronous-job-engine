@@ -107,6 +107,7 @@ public class SequentialJobExecutor implements JobExecutor {
         log.debug("Starting sequential execution: jobId={}, jobName={}", job.getId(), job.getName());
         
         activeCount.incrementAndGet();
+        metricsService.incrementActive(ExecutionMode.SEQUENTIAL);
         var startTime = Instant.now();
         job.setStatus(JobStatus.RUNNING);
         job.setStartedAt(startTime);
@@ -147,6 +148,7 @@ public class SequentialJobExecutor implements JobExecutor {
 
         } finally {
             activeCount.decrementAndGet();
+            metricsService.decrementActive(ExecutionMode.SEQUENTIAL);
         }
     }
 
