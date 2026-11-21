@@ -12,6 +12,7 @@ services:
       - "host.docker.internal:host-gateway"
     security_opt:
       - no-new-privileges:true
+    read_only: true
 
   grafana:
     image: grafana/grafana:latest
@@ -25,6 +26,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     security_opt:
       - no-new-privileges:true
+    read_only: true
 
 volumes:
   grafana-data:
